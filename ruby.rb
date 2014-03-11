@@ -1,65 +1,36 @@
 class Ruby193 < FPM::Cookery::Recipe
-  description 'The Ruby virtual machine'
 
+  $rubyversion = '2.0.0-p451'
+  rubyinstallversion = '0.4.1'
+  rubyinstallsha256  = '1b35d2b6dbc1e75f03fff4e8521cab72a51ad67e32afd135ddc4532f443b730e'
+  
+  # Rewrite ruby version string to be packaging-friendly
+  v = $rubyversion.sub(/-p/,'.')
+
+  # Package metadata
+  description 'The Ruby virtual machine'
   name 'ruby'
-  version '2.0.0.353'
+  version "#{v}"
   revision 1
   homepage 'http://www.ruby-lang.org/'
-  source 'http://ftp.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p353.tar.bz2'
-  sha256 '3de4e4d9aff4682fa4f8ed2b70bd0d746fae17452fc3d3a8e8f505ead9105ad9'
-
-  maintainer '<github@tinycat.co.uk>'
-  vendor     'fpm'
+  maintainer 'code@beddari.net'
   license    'The Ruby License'
-
   section 'interpreters'
 
-  platforms [:ubuntu, :debian] do
-    build_depends 'autoconf',
-                  'libreadline6-dev',
-                  'bison',
-                  'zlib1g-dev',
-                  'libssl-dev',
-                  'libncurses5-dev',
-                  'build-essential',
-                  'libffi-dev',
-                  'libgdbm-dev'
-    depends 'libffi6',
-            'libncurses5',
-            'libreadline6',
-            'libssl1.0.0',
-            'libtinfo5',
-            'zlib1g',
-            'libgdbm3'
-  end
-
-  platforms [:fedora, :redhat, :centos] do
-    build_depends 'rpmdevtools',
-                  'libffi-devel',
-                  'autoconf',
-                  'bison',
-                  'libxml2-devel',
-                  'libxslt-devel',
-                  'openssl-devel',
-                  'gdbm-devel'
-    depends 'zlib',
-            'libffi',
-            'gdbm'
-  end
-  platforms [:fedora] do depends.push('openssl-libs') end
-  platforms [:redhat, :centos] do depends.push('openssl') end
+  # Source and sha for ruby-install
+  source "https://github.com/postmodern/ruby-install/archive/v#{rubyinstallversion}.tar.gz"
+  sha256 "#{rubyinstallsha256}"
 
   def build
-    configure :prefix => destdir,
-              'enable-shared' => true,
-              'disable-install-doc' => true,
-              'with-opt-dir' => destdir
-    make
+    # Install ruby-install
+    make :install
   end
 
   def install
-    make :install
-    # Shrink package.
+    # Download, cache and build
+    safesystem "/usr/local/bin/ruby-install -i #{destdir} -s #{cachedir} \
+      ruby #{$rubyversion} -- --disable-install-doc --enable-shared"
+    # Shrink
     rm_f "#{destdir}/lib/libruby-static.a"
     safesystem "strip #{destdir}/bin/ruby"
     safesystem "find #{destdir} -name '*.so' -or -name '*.so.*' | xargs strip"
