@@ -2,9 +2,10 @@ class PuppetGem < FPM::Cookery::Recipe
   description 'Puppet gem stack'
 
   name 'puppet'
-  version '3.3.2'
+  version '3.4.3'
 
-  source "nothing", :with => :noop
+  source "https://github.com/puppetlabs/puppet/archive/#{version}.tar.gz"
+  sha256 '9171082d6acda671e664182fa0cd1761b0c8fab195ed6c0ace2c953e6282d910'
 
   platforms [:ubuntu, :debian] do
     build_depends 'libaugeas-dev', 'pkg-config'
@@ -17,22 +18,19 @@ class PuppetGem < FPM::Cookery::Recipe
   end
 
   def build
-    # Install gems using the gem command from destdir
-    gem_install 'facter',      '1.7.3'
-    gem_install 'json_pure',   '1.8.0'
-    gem_install 'hiera',       '1.3.0'
-    gem_install 'deep_merge',  '1.0.0'
-    gem_install 'rgen',        '0.6.5'
-    gem_install 'ruby-augeas', '0.4.1'
-    gem_install 'ruby-shadow', '2.2.0'
-    gem_install 'gpgme',       '2.0.2'
-    gem_install name,          version
+    # We need bundler in the omnibus ruby to handle the gems
+    gem_install 'bundler', '1.5.3'
 
-    # Download init scripts and conf
+    # Cache the main Puppet bundle to disk
+    bundle_prepare "#{name}-#{version}-Gemfile", "#{name}-#{version}-Gemfile.lock"
+
     build_files
   end
 
   def install
+
+    bundle_install "#{name}-#{version}-Gemfile"
+
     # Install init-script and puppet.conf
     install_files
 
@@ -53,40 +51,70 @@ class PuppetGem < FPM::Cookery::Recipe
   private
 
   def gem_install(name, version = nil)
-    v = version.nil? ? '' : "-v #{version}"
-    cleanenv_safesystem "#{destdir}/bin/gem install --no-ri --no-rdoc #{v} #{name}"
+    v = version.nil? ? nil : "--version #{version}"
+    begin
+      cleanenv_safesystem "#{destdir}/bin/gem query --installed --name-matches '^#{name}$' #{v}"
+    rescue
+      cachedir('gems/cache').mkdir
+      if not File.exist? cachedir("gems/cache/#{name}-#{version}.gem")
+        cleanenv_safesystem "#{destdir}/bin/gem install --install-dir #{cachedir('gems')} --no-document #{v} #{name}"
+      end
+      Dir.chdir cachedir('gems/cache') do
+        cleanenv_safesystem "#{destdir}/bin/gem install --local --no-document #{v} #{name}"
+      end
+    end
+  end
+
+  def bundle_prepare(gemfile, gemfile_lock = nil)
+    # Only if there is no prepared cache
+    if not Dir.exist? cachedir("#{gemfile}/vendor/cache")
+      cachedir(gemfile).mkdir
+      cachedir(gemfile).install workdir(gemfile), 'Gemfile'
+      cachedir(gemfile).install workdir(gemfile_lock), 'Gemfile.lock'
+      begin
+        Dir.chdir cachedir(gemfile) do
+          cleanenv_safesystem "#{destdir}/bin/bundle package --all"
+        end
+      rescue
+        # Cleanup if we fail, better than leaving stuff ...
+        rm_f cachedir(gemfile)
+      end
+    end
+  end
+
+  def bundle_install(gemfile)
+    # We only install the bundle if it is cached
+    if Dir.exist? cachedir("#{gemfile}/vendor/cache")
+      Dir.chdir cachedir(gemfile) do
+        cleanenv_safesystem "#{destdir}/bin/bundle install --local --no-cache --system"
+      end
+    end
   end
 
   platforms [:ubuntu, :debian] do
     def build_files
-      system "curl -O https://raw.github.com/puppetlabs/puppet/#{version}/ext/debian/puppet.conf"
-      system "curl -O https://raw.github.com/puppetlabs/puppet/#{version}/ext/debian/puppet.init"
-      system "curl -O https://raw.github.com/puppetlabs/puppet/#{version}/ext/debian/puppet.default"
       # Set the real daemon path in initscript defaults
-      system "echo DAEMON=#{destdir}/bin/puppet >> puppet.default"
+      system "echo DAEMON=#{destdir}/bin/puppet >> ext/debian/puppet.default"
     end
     def install_files
       etc('puppet').mkdir
-      etc('puppet').install builddir('puppet.conf') => 'puppet.conf'
-      etc('init.d').install builddir('puppet.init') => 'puppet'
-      etc('default').install builddir('puppet.default') => 'puppet'
+      etc('puppet').install 'ext/debian/puppet.conf' => 'puppet.conf'
+      etc('init.d').install 'ext/debian/puppet.init' => 'puppet'
+      etc('default').install 'ext/debian/puppet.default' => 'puppet'
       chmod 0755, etc('init.d/puppet')
     end
   end
 
   platforms [:fedora, :redhat, :centos] do
     def build_files
-      safesystem "curl -O https://raw.github.com/puppetlabs/puppet/#{version}/ext/redhat/puppet.conf"
-      safesystem "curl -O https://raw.github.com/puppetlabs/puppet/#{version}/ext/redhat/client.init"
-      safesystem "curl -O https://raw.github.com/puppetlabs/puppet/#{version}/ext/redhat/client.sysconfig"
       # Set the real daemon path in initscript defaults
-      safesystem "echo PUPPETD=#{destdir}/bin/puppet >> client.sysconfig"
+      safesystem "echo PUPPETD=#{destdir}/bin/puppet >> ext/redhat/client.sysconfig"
     end
     def install_files
       etc('puppet').mkdir
-      etc('puppet').install builddir('puppet.conf') => 'puppet.conf'
-      etc('init.d').install builddir('client.init') => 'puppet'
-      etc('sysconfig').install builddir('client.sysconfig') => 'puppet'
+      etc('puppet').install 'ext/redhat/puppet.conf' => 'puppet.conf'
+      etc('init.d').install 'ext/redhat/client.init' => 'puppet'
+      etc('sysconfig').install 'ext/redhat/client.sysconfig' => 'puppet'
       chmod 0755, etc('init.d/puppet')
     end
   end
