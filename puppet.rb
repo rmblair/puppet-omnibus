@@ -62,15 +62,21 @@ class PuppetGem < FPM::Cookery::Recipe
       system "curl -L -O https://raw.githubusercontent.com/puppetlabs/puppet/#{version}/ext/debian/puppet.conf"
       system "curl -L -O https://raw.githubusercontent.com/puppetlabs/puppet/#{version}/ext/debian/puppet.init"
       system "curl -L -O https://raw.githubusercontent.com/puppetlabs/puppet/#{version}/ext/debian/puppet.default"
+      system "curl -L -O https://raw.githubusercontent.com/puppetlabs/puppet/#{version}/ext/debian/puppetmaster.init"
+      system "curl -L -O https://raw.githubusercontent.com/puppetlabs/puppet/#{version}/ext/debian/puppetmaster.default"
       # Set the real daemon path in initscript defaults
       system "echo DAEMON=#{destdir}/bin/puppet >> puppet.default"
+      system "echo DAEMON=#{destdir}/bin/puppet >> puppetmaster.default"
     end
     def install_files
       etc('puppet').mkdir
       etc('puppet').install builddir('puppet.conf') => 'puppet.conf'
       etc('init.d').install builddir('puppet.init') => 'puppet'
+      etc('init.d').install builddir('puppetmaster.init') => 'puppetmaster'
       etc('default').install builddir('puppet.default') => 'puppet'
+      etc('default').install builddir('puppetmaster.default') => 'puppetmaster'
       chmod 0755, etc('init.d/puppet')
+      chmod 0755, etc('init.d/puppetmaster')
     end
   end
 
@@ -79,15 +85,21 @@ class PuppetGem < FPM::Cookery::Recipe
       safesystem "curl -L -O https://raw.githubusercontent.com/puppetlabs/puppet/#{version}/ext/redhat/puppet.conf"
       safesystem "curl -L -O https://raw.githubusercontent.com/puppetlabs/puppet/#{version}/ext/redhat/client.init"
       safesystem "curl -L -O https://raw.githubusercontent.com/puppetlabs/puppet/#{version}/ext/redhat/client.sysconfig"
+      safesystem "curl -L -O https://raw.githubusercontent.com/puppetlabs/puppet/#{version}/ext/redhat/server.init"
+      safesystem "curl -L -O https://raw.githubusercontent.com/puppetlabs/puppet/#{version}/ext/redhat/server.sysconfig"
       # Set the real daemon path in initscript defaults
       safesystem "echo PUPPETD=#{destdir}/bin/puppet >> client.sysconfig"
+      safesystem "echo PUPPETD=#{destdir}/bin/puppet >> server.sysconfig"
     end
     def install_files
       etc('puppet').mkdir
       etc('puppet').install builddir('puppet.conf') => 'puppet.conf'
       etc('init.d').install builddir('client.init') => 'puppet'
+      etc('init.d').install builddir('server.init') => 'puppetmaster'
       etc('sysconfig').install builddir('client.sysconfig') => 'puppet'
+      etc('sysconfig').install builddir('server.sysconfig') => 'puppetmaster'
       chmod 0755, etc('init.d/puppet')
+      chmod 0755, etc('init.d/puppetmaster')
     end
   end
 

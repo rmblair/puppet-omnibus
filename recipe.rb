@@ -22,12 +22,16 @@ class PuppetOmnibus < FPM::Cookery::Recipe
   platforms [:ubuntu, :debian] do
     config_files '/etc/puppet/puppet.conf',
                  '/etc/init.d/puppet',
-                 '/etc/default/puppet'
+                 '/etc/init.d/puppetmaster',
+                 '/etc/default/puppet',
+                 '/etc/default/puppetmaster'
   end
   platforms [:fedora, :redhat, :centos] do
     config_files '/etc/puppet/puppet.conf',
                  '/etc/init.d/puppet',
-                 '/etc/sysconfig/puppet'
+                 '/etc/init.d/puppetmaster',
+                 '/etc/sysconfig/puppet',
+                 '/etc/sysconfig/puppetmaster'
   end
   omnibus_additional_paths config_files
 
