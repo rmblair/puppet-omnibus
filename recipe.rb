@@ -12,6 +12,17 @@ class PuppetOmnibus < FPM::Cookery::Recipe
 
   source '', :with => :noop
 
+  replaces        'puppet',
+                  'puppet-common',
+                  'puppet-server',
+                  'puppet-testsuite',
+                  'puppetmaster',
+                  'puppetmaster-common',
+                  'puppetmaster-passenger',
+                  'facter',
+                  'hiera',
+                  'hiera-puppet'
+
   directories     "/opt/#{name}",
                   '/etc/puppet'
 
