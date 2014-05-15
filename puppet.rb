@@ -26,6 +26,7 @@ class PuppetGem < FPM::Cookery::Recipe
     gem_install 'ruby-augeas', '0.5.0'
     gem_install 'ruby-shadow', '2.3.4'
     gem_install 'gpgme',       '2.0.5'
+    gem_install 'r10k',        '1.2.1'
     gem_install name,          version
 
     # Download init scripts and conf
@@ -42,6 +43,7 @@ class PuppetGem < FPM::Cookery::Recipe
     destdir('../bin').install workdir('omnibus.bin'), 'puppet'
     destdir('../bin').install workdir('omnibus.bin'), 'facter'
     destdir('../bin').install workdir('omnibus.bin'), 'hiera'
+    destdir('../bin').install workdir('omnibus.bin'), 'r10k'
 
     # Symlink binaries to PATH using update-alternatives
     with_trueprefix do
