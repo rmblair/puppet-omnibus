@@ -12,7 +12,8 @@ class PuppetOmnibus < FPM::Cookery::Recipe
 
   source '', :with => :noop
 
-  replaces        'puppet',
+  conflicts       'puppet',
+                  'puppet-omnibus',
                   'puppet-common',
                   'puppet-server',
                   'puppet-testsuite',
