@@ -26,7 +26,10 @@ class PuppetGem < FPM::Cookery::Recipe
     gem_install 'ruby-augeas', '0.5.0'
     gem_install 'ruby-shadow', '2.3.4'
     gem_install 'gpgme',       '2.0.5'
-    gem_install 'r10k',        '1.2.1' # environment deployments
+    gem_install 'r10k',        '1.2.1'    # environment deployments
+    gem_install 'hipchat',     '1.1.0'    # for puppet-hipchat report parser
+    gem_install 'xmpp4r',      '0.5.6'    # for puppet-xmpp report parser
+    gem_install 'riemann-client', '0.2.3' # for puppet-riemann report parser
     gem_install name,          version
 
     # Download init scripts and conf
