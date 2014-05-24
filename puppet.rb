@@ -114,9 +114,16 @@ set -e
 BIN_PATH="#{destdir}/bin"
 BINS="puppet facter hiera"
 
-for BIN in $BINS; do
-  update-alternatives --install /usr/bin/$BIN $BIN $BIN_PATH/$BIN 100
-done
+# 1-initial install, 2+-upgrade, 0-uninstall last copy
+if [ $1 -eq 1 ]; then
+  for BIN in $BINS; do
+  /usr/sbin/update-alternatives --install /usr/bin/$BIN $BIN $BIN_PATH/$BIN 100
+  done
+elif [ $1 -gt 1 ]; then
+  for BIN in $BINS; do
+    /usr/sbin/update-alternatives --set $BIN $BIN_PATH/$BIN
+  done
+fi
 
 exit 0
       __POSTINST
@@ -132,9 +139,18 @@ set -e
 BIN_PATH="#{destdir}/bin"
 BINS="puppet facter hiera"
 
-if [ "$1" != "upgrade" ]; then
+# 1-initial install, 2+-upgrade, 0-uninstall last copy
+if [ $1 -eq 0 ]; then
   for BIN in $BINS; do
-    update-alternatives --remove $BIN $BIN_PATH/$BIN
+    /usr/sbin/update-alternatives --remove $BIN $BIN_PATH/$BIN
+  done
+elif [ $1 -eq 1 ]; then
+  for BIN in $BINS; do
+  /usr/sbin/update-alternatives --install /usr/bin/$BIN $BIN $BIN_PATH/$BIN 100
+  done
+elif [ $1 -gt 1 ]; then
+  for BIN in $BINS; do
+    /usr/sbin/update-alternatives --set $BIN $BIN_PATH/$BIN
   done
 fi
 
