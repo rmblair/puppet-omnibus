@@ -26,7 +26,7 @@ class PuppetGem < FPM::Cookery::Recipe
     gem_install 'ruby-augeas', '0.5.0'
     gem_install 'ruby-shadow', '2.3.4'
     gem_install 'gpgme',       '2.0.5'
-    gem_install 'r10k',        '1.2.1'
+    gem_install 'r10k',        '1.2.1' # environment deployments
     gem_install name,          version
 
     # Download init scripts and conf
